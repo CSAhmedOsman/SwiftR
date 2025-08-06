@@ -2,318 +2,166 @@
 
 [![Join the chat at https://gitter.im/adamhartford/SwiftR](https://badges.gitter.im/adamhartford/SwiftR.svg)](https://gitter.im/adamhartford/SwiftR?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-A Swift client for SignalR. Supports hubs and persistent connections.
+SwiftR is a powerful SignalR client library for iOS, written in Swift. It allows seamless communication with SignalR servers using WebSockets or other transports. Originally based on the now-archived `adamhartford/SwiftR`, this version includes major upgrades for modern iOS development.
 
-### Demo
+---
 
-I have published a sample SignalR server at http://swiftr.azurewebsites.net. The iOS demo application now uses this server. See [SwiftRChat](https://github.com/adamhartford/SwiftRChat) for the souce code. It's based on this, with some minor changes:
+## 🚀 What's New
 
-http://www.asp.net/signalr/overview/deployment/using-signalr-with-azure-web-sites
+* 🔄 Migrated from `UIWebView` to `WKWebView` for modern compatibility and performance.
+* 📦 Now supports both CocoaPods and Swift Package Manager (SPM).
+* 🧼 Codebase cleaned and refactored for Swift 5+, Xcode 15+, and iOS 14+.
+* 💬 Added documentation and inline comments (Arabic & English).
+* ✅ Compatibility with modern iOS lifecycles and best practices.
+* 📡 Updated for compatibility with SignalR 2.x (ASP.NET Framework).
 
-### How does it work?
+---
 
-It's a wrapper around the SignalR JavaScript client running in a hidden web view. As such, it's subject to the same limitations of that client -- namely, no support for custom headers when using WebSockets. This is because the browser's WebSocket client does not support custom headers.
+## 📦 Installation
 
-### UIWebView or WKWebView?
+### CocoaPods
 
-Either, your choice. Note that since WKWebView runs in a separate process, it does not have access to cookies in NSHTTPCookieStorage. If you need cookies, use UIWebView. SwiftR uses UIWebView by default, but you can choose WKWebView instead:
+```ruby
+pod 'SwiftR', :git => 'https://github.com/CSAhmedOsman/SwiftR.git', :branch => 'master'
+```
+
+Then run:
+
+```bash
+pod install
+```
+
+### Swift Package Manager (SPM)
+
+1. In Xcode, open your project settings.
+2. Go to the **Package Dependencies** tab.
+3. Click the `+` button and enter:
+
+```
+https://github.com/CSAhmedOsman/SwiftR.git
+```
+
+4. Choose the `main` branch or set a version once releases are tagged.
+
+---
+
+## 💡 Usage
 
 ```swift
-// Client
-let connection = SignalR("https://swiftr.azurewebsites.net")
-connection.useWKWebView = true
-```
-
-Also when using WKWebView, make sure to enable CORS on your server:
-
-```csharp
-// Server
-app.UseCors (CorsOptions.AllowAll);
-
-// See my SignalRApplication repo for a CORS example with ASP.NET Core.
-```
-
-#### How to set Origin
-
-If allowing all origins (`*`) is not acceptable, you can specify an allowed origin via the `originUrlString` property.
-
-```swift
-connection.originUrlString = "http://www.example.com"
-```
-
-### What versions of SignalR are supported?
-
-SwiftR supports SignalR version 2.x. Version 2.2.2 is assumed by default. To change the SignalR version:
-
-```swift
-let connection = SignalR("https://swiftr.azurewebsites.net")
-connection.signalRVersion = .v2_2_2
-//connection.signalRVersion = .v2_2_1
-//connection.signalRVersion = .v2_2_0
-//connection.signalRVersion = .v2_1_2
-//connection.signalRVersion = .v2_1_1
-//connection.signalRVersion = .v2_1_0
-//connection.signalRVersion = .v2_0_3
-//connection.signalRVersion = .v2_0_2
-//connection.signalRVersion = .v2_0_1
-//connection.signalRVersion = .v2_0_0
-```
-
-### Installation
-
-[CocoaPods](https://cocoapods.org):
-``` ruby
-use_frameworks!
-pod 'SwiftR'
-```
-
-[Carthage](https://github.com/Carthage/Carthage):
-```
-github 'adamhartford/SwiftR'
-```
-
-### Server Example
-
-See https://github.com/adamhartford/SignalRDemo for a sample self-hosted SignalR application. Or, https://github.com/adamhartford/SignalRApplication for an ASP.NET 5 version.
-
-### Simple Example (Hub)
-
-```c#
-// Server
-public class SimpleHub : Hub 
-{
-    public void SendSimple(string message, string detail)
-    {
-        Clients.All.notifySimple (message, detail);
-    }
-}
-```
-
-Default parameter names in callback response:
-```swift
-// Client
 let connection = SignalR("http://localhost:5000")
 
-let simpleHub = Hub("simpleHub")
-simpleHub.on("notifySimple") { args in
+let hub = Hub("chatHub")
+hub.on("receiveMessage") { args in
     let message = args![0] as! String
-    let detail = args![1] as! String
-    print("Message: \(message)\nDetail: \(detail)")
+    print("Received: \(message)")
 }
 
-connection.addHub(simpleHub)
+connection.addHub(hub)
+
+connection.started = {
+    print("Connected")
+    hub.invoke("send", arguments: ["Hello from Swift!"])
+}
+
 connection.start()
-
-...
-
-// Invoke server method
-simpleHub.invoke("sendSimple", arguments: ["Simple Test", "This is a simple message"])
-
-// Invoke server method and handle response
-simpleHub.invoke("sendSimple", arguments: ["Simple Test", "This is a simple message"]) { (result, error) in
-    if let e = error {
-        print("Error: \(e)")
-    } else {
-        print("Success!")
-        if let r = result {
-            print("Result: \(r)")
-        }
-    }
-}
 ```
 
-### Complex Example (Hub)
+---
 
-```c#
-// Server
-public class ComplexMessage
-{
-    public int MessageId { get; set; }
-    public string Message { get; set; }
-    public string Detail { get; set; }
-    public IEnumerable<String> Items { get; set; }
-}
+## 🛠 Features
 
-// Server
-public class ComplexHub : Hub
-{
-    public void SendComplex(ComplexMessage message) 
-    {
-        Clients.All.notifyComplex (message);
-    }
-}
-```
+* ✅ Connect to multiple hubs
+* ✅ Register event handlers for server methods
+* ✅ Send data to server via `invoke`
+* 🔁 Reconnection handling
+* 🧾 Error logging & status tracking
+* 🌍 Supports persistent connections and hub-based messaging
+
+---
+
+## 🌐 SignalR Version
+
+This library works with **SignalR 2.x** servers. Server version 2.1 is confirmed compatible. For ASP.NET Core SignalR (3.0+), this client is **not** compatible.
+
+---
+
+## 📘 Documentation
+
+All main components are documented inline. Key classes:
+
+* `SignalR`: Main connection manager
+* `Hub`: Represents a SignalR hub
+* `HubConnection`: Holds connection options & state
+
+### Transport Methods
 
 ```swift
-// Client
-let connection = SignalR("http://localhost:5000")
-
-let complexHub = Hub("complexHub")
-complexHub.on("notifyComplex") { args in
-    let m: AnyObject = args![0] as AnyObject!
-    print(m)
-}
-
-connection.addHub(complexHub)
-connection.start()
-
-...
-
-let message = [
-    "messageId": 1,
-    "message": "Complex Test",
-    "detail": "This is a complex message",
-    "items": ["foo", "bar", "baz"]
-]
-
-// Invoke server method
-complexHub.invoke("sendComplex", parameters: [message])
-```
-
-### Persistent Connections
-```c#
-// Server
-app.MapSignalR<MyConnection> ("/echo");
-
-...
-
-public class MyConnection : PersistentConnection 
-{
-    protected override Task OnReceived(IRequest request, string connectionId, string data) 
-    {
-        return Connection.Broadcast(data);
-    }
-}
-```
-
-```swift
-// Client
-let persistentConnection = SignalR("http://localhost:8080/echo", connectionType: .persistent)
-persistentConnection.received = { data in
-    print(data)
-}
-persistentConnection.start()
-
-// Send data
-persistentConnection.send("Persistent Connection Test")
-```
-
-### Transport Method
-
-By default, SignalR will choose the best transport available to you. You can also specify the transport method:
-
-```swift
-let connection = SignalR("https://swiftr.azurewebsites.net")
-connection.transport = .auto // This is the default
+connection.transport = .auto            // Default
 connection.transport = .webSockets
 connection.transport = .serverSentEvents
 connection.transport = .foreverFrame
 connection.transport = .longPolling
 ```
 
-### Connection Lifetime Events
-
-SwiftR exposes the following SignalR events:
+### Connection Lifecycle Events
 
 ```swift
-let connection = SignalR("http://swiftr.azurewebsites.net")
-connection.started = { print("started") }
-connection.connected = { print("connected: \(connection.connectionID)") }
-connection.connectionSlow = { print("connectionSlow") }
-connection.reconnecting = { print("reconnecting") }
-connection.reconnected = { print("reconnected") }
-connection.disconnected = { print("disconnected") }
-connection.start()
+connection.started = { print("Started") }
+connection.connected = { print("Connected: \(connection.connectionID)") }
+connection.connectionSlow = { print("Connection is slow") }
+connection.reconnecting = { print("Reconnecting...") }
+connection.reconnected = { print("Reconnected") }
+connection.disconnected = { print("Disconnected") }
 ```
 
-### Reconnecting
-
-You may find it necessary to try reconnecting manually once disconnected. Here's an example of how to do that:
+### Manual Reconnect Example
 
 ```swift
 connection.disconnected = {
-    print("Disconnected...")
-    
-    // Try again after 5 seconds
-    let delayTime = DispatchTime.now() + .seconds(5)
-    DispatchQueue.main.asyncAfter(deadline: delayTime) { [weak self] in
+    print("Disconnected... Retrying in 5 seconds")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
         connection.start()
     }
 }
 ```
 
-### Stop/Start Connection
-
-Use the `stop()` and `start()` methods to manage connections manually.
+### Sending Query Strings or Headers
 
 ```swift
-let connection  = SignalR("https://swiftr.azurewebsites.net")
-connection.start()
-connection.stop()
-
-...
-
-if connection.state == .connected {
-    connection.stop()
-} else if connection.state == .disonnected {
-    connection.start()
-}
+connection.queryString = ["token": "abc123"]
+connection.headers = ["X-Auth": "Bearer abc123"]
 ```
 
-### Connection State
+---
 
-```swift
-public enum State {
-    case connecting
-    case connected
-    case disconnected
-}
+## 🔗 Demo Server
 
-```
+Try it using the original demo server:
 
-### Sending information to SignalR
+[http://swiftr.azurewebsites.net](http://swiftr.azurewebsites.net)
 
-#### Query String
+Source: [SwiftRChat](https://github.com/adamhartford/SwiftRChat)
 
-```swift
-let connection = SignalR("https://swiftr.azurewebsites.net")
-connection.queryString = ["foo": "bar"]
-```
+Also see: [SignalR Application (ASP.NET)](https://github.com/adamhartford/SignalRApplication)
 
-#### Custom Headers (Non-WebSocket Only)
+---
 
-```swift
-let connection = SignalR("https://swiftr.azurewebsites.net")
-connection.headers = ["X-MyHeader1": "Value1", "X-MyHeader2", "Value2"]
-```
+## 🤝 Contributing
 
-#### Cookies (UIWebView Only)
+Contributions are welcome! Please fork the repo and submit a PR.
 
-SwiftR will send any cookies in your app's NSHTTPCookieStorage to SignalR. You can also set cookies manually:
+* ✅ Make sure code is SwiftLint clean
+* ✅ Add tests if necessary
+* ✅ Keep documentation up to date
 
-```swift
-let cookieProperties = [
-    NSHTTPCookieName: "Foo",
-    NSHTTPCookieValue: "Bar",
-    NSHTTPCookieDomain: "myserver.com",
-    NSHTTPCookiePath: "/",
-]
-let cookie = NSHTTPCookie(properties: cookieProperties)
-NSHTTPCookieStorage.sharedHTTPCookieStorage().setCookie(cookie!)
-```
+---
 
-### Error Handling
+## 📄 License
 
-```swift
-connection.error = { error in 
-  print("Error: \(error)")
-  
-  if let source = error?["source"] as? String, source == "TimeoutException" {
-      print("Connection timed out. Restarting...")
-      connection.start()
-  }
-}
-```
+MIT License
 
-### License
-SwiftR is released under the MIT license. See LICENSE for details.
+---
+
+## 🙌 Author
+
+Maintained and modernized by [Ahmed Osman El-Harby](https://github.com/CSAhmedOsman)
